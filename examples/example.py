@@ -30,13 +30,7 @@ def main():
     bandolier = Bandolier()
     bandolier.add_function(get_weather)
     bandolier.add_function(get_location)
-
-    bandolier.add_message(
-        {
-            "role": "system",
-            "content": "You are a helpful assistant.",
-        }
-    )
+    bandolier.add_system_message("You are a helpful assistant.")
 
     while True:
         user_input = input("You: ")

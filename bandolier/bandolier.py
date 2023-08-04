@@ -74,6 +74,10 @@ class Bandolier:
     def add_message(self, message):
         self.messages.append(Box(message))
 
+    def add_system_message(self, content):
+        "convience method for adding a system message"
+        self.add_message({"role": "system", "content": content})
+
     def call(self, function_name, arguments):
         arguments = json.loads(arguments)
         function = self.functions[function_name]
