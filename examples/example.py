@@ -1,23 +1,28 @@
 """Experiment with using OpenAI chat functions."""
-from bandolier import Bandolier, completion
+from bandolier import Bandolier, annotate_arguments, annotate_description
 
 
-def get_weather(location):
-    """
-    Get the weather for a location.
+@annotate_arguments(
+    {
+        "location": {
+            "type": "string",
+            "description": "The city and state, e.g. San Francisco, CA.",
+        },
+        "unit": {
+            "type": "string",
+            "description": "The unit to return the temperature in, e.g. F or C.",
+            "default": "F",
+        },
+    }
+)
+@annotate_description("Get the weather for a location.")
+def get_weather(location, unit="F"):
+    return {"temperature": 72, unit: unit, "conditions": ["sunny", "windy"]}
 
-    Parameters
-    ----------
-    location : string
-        The city and state, e.g. San Francisco, CA.
-    """
-    return {"temperature": 72, "conditions": ["sunny", "windy"]}
 
-
+# can also use docstring for description
 def get_location():
-    """
-    Get the user's current location.
-    """
+    """Get the user's location."""
     return "San Francisco, CA"
 
 

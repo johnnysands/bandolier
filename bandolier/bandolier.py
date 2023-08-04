@@ -18,6 +18,22 @@ def completion(messages, functions=None):
     return response["choices"][0]
 
 
+def annotate_description(description):
+    def decorator(function):
+        function.__doc__ = description
+        return function
+
+    return decorator
+
+
+def annotate_arguments(properties):
+    def decorator(function):
+        function.__properties__ = properties
+        return function
+
+    return decorator
+
+
 class Bandolier:
     def __init__(self, completion_fn=completion):
         self.functions = {}
@@ -26,8 +42,23 @@ class Bandolier:
         self.completion_fn = completion_fn
 
     def add_function(self, function):
-        metadata = self._gather_function_metadata(function)
-        self.functions[metadata["name"]] = function
+        name = function.__name__
+        description = function.__doc__ if hasattr(function, "__doc__") else ""
+        properties = (
+            function.__properties__ if hasattr(function, "__properties__") else {}
+        )
+        required = []
+        for param_name, param in inspect.signature(function).parameters.items():
+            if param.default == inspect.Parameter.empty:
+                required.append(param_name)
+
+        metadata = {
+            "name": name,
+            "description": description,
+            "parameters": {"type": "object", "properties": properties},
+            "required": required,
+        }
+        self.functions[name] = function
         self.function_metadata.append(metadata)
 
     def add_message(self, message):
