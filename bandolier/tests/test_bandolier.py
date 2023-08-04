@@ -159,3 +159,27 @@ def test_run_two_function_calls():
     response = bandolier.run()
     assert response.role == "assistant"
     assert "The weather in San Francisco, CA is 72F and sunny." in response.content
+
+
+def test_add_function_too_many_annotated_arguments():
+    @annotate_arguments({"arg1": {"type": "string"}, "arg2": {"type": "string"}})
+    def function_with_one_arg(arg1):
+        pass
+
+    bandolier = Bandolier()
+
+    # Test adding a function with too many annotated arguments
+    with pytest.raises(ValueError):
+        bandolier.add_function(function_with_one_arg)
+
+
+def test_add_function_too_few_annotated_arguments():
+    @annotate_arguments({"arg1": {"type": "string"}})
+    def function_with_two_args(arg1, arg2):
+        pass
+
+    bandolier = Bandolier()
+
+    # Test adding a function with too few annotated arguments
+    with pytest.raises(ValueError):
+        bandolier.add_function(function_with_two_args)

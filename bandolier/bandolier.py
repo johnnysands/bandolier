@@ -7,7 +7,7 @@ import openai
 import json
 
 
-# openai routines
+# openai helper
 def completion(messages, functions=None):
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
@@ -48,8 +48,17 @@ class Bandolier:
         properties = (
             function.__properties__ if hasattr(function, "__properties__") else {}
         )
+
+        # Get the list of arguments from the function signature
+        signature = inspect.signature(function)
+        function_args = set(signature.parameters.keys())
+
+        properties_args = set(properties.keys())
+        if function_args != properties_args:
+            raise ValueError(f"Arguments for function {name} do not match the schema.")
+
         required = []
-        for param_name, param in inspect.signature(function).parameters.items():
+        for param_name, param in signature.parameters.items():
             if param.default == inspect.Parameter.empty:
                 required.append(param_name)
 
