@@ -7,9 +7,12 @@ with open("README.md") as f:
     readme = [line for line in readme if "<img" not in line]
     readme = "\n".join(readme)
 
+with open("requirements.txt", "r") as f:
+    requirements = f.read().splitlines()
+
 setup(
     name="bandolier",
-    version="0.0.1",
+    version="0.0.2",
     description="A helper for dealing with OpenAI functions",
     long_description=readme,
     long_description_content_type="text/markdown",
@@ -18,7 +21,7 @@ setup(
     author_email="johnnysands@users.noreply.github.com",
     license="MIT",
     packages=["bandolier"],
-    install_requires=[],
+    install_requires=requirements,
     readme="README.md",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
