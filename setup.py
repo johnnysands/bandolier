@@ -12,8 +12,8 @@ with open("requirements.txt", "r") as f:
 
 setup(
     name="bandolier",
-    version="0.0.2",
-    description="A helper for dealing with OpenAI functions",
+    version="0.0.3",
+    description="A helper for OpenAI functions",
     long_description=readme,
     long_description_content_type="text/markdown",
     url="https://github.com/johnnysands/bandolier",
