@@ -97,11 +97,11 @@ class Bandolier:
             "content": json.dumps(function(**arguments)),
         }
 
-    def config(self):
+    def get_function_metadata(self):
         return self.function_metadata
 
     def run(self):
-        response = self.completion_fn(self.messages, self.config())
+        response = self.completion_fn(self.messages, self.get_function_metadata())
         message = response.message
         self.add_message(message)
 
@@ -111,7 +111,7 @@ class Bandolier:
             )
             self.add_message(message)
 
-            response = self.completion_fn(self.messages, self.config())
+            response = self.completion_fn(self.messages, self.get_function_metadata())
             message = response.message
             self.add_message(message)
 
