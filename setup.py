@@ -12,7 +12,7 @@ with open("requirements.txt", "r") as f:
 
 setup(
     name="bandolier",
-    version="0.0.3",
+    version="0.0.4",
     description="A helper for OpenAI functions",
     long_description=readme,
     long_description_content_type="text/markdown",

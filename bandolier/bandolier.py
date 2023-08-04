@@ -1,7 +1,6 @@
 """Experiment with using OpenAI chat functions."""
 
 from box import Box
-from docstring_parser import parse
 import inspect
 import openai
 import json
