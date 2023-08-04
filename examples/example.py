@@ -36,7 +36,7 @@ def main():
         user_input = input("You: ")
         bandolier.add_user_message(user_input)
         message = bandolier.run()
-        print(message.role, message.content)
+        print(f"{message.role}: {message.content}")
 
 
 if __name__ == "__main__":
