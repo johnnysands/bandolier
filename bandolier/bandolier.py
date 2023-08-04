@@ -5,6 +5,7 @@ from docstring_parser import parse
 import inspect
 import openai
 import json
+import tiktoken
 
 
 # openai helper
@@ -36,11 +37,15 @@ def annotate_arguments(properties):
 
 
 class Bandolier:
-    def __init__(self, completion_fn=completion):
+    def __init__(
+        self, completion_fn=completion, model="gpt-3.5-turbo", max_tokens=3000
+    ):
         self.functions = {}
         self.function_metadata = []
         self.messages = []
         self.completion_fn = completion_fn
+        self.max_tokens = max_tokens
+        self.encoding = tiktoken.encoding_for_model(model)
 
     def add_function(self, function):
         name = function.__name__
@@ -73,6 +78,7 @@ class Bandolier:
 
     def add_message(self, message):
         self.messages.append(Box(message))
+        self._trim_messages()
 
     def add_system_message(self, content):
         "convience method for adding a system message"
@@ -114,28 +120,11 @@ class Bandolier:
 
         return message
 
-    def _gather_function_metadata(self, function):
-        doc = parse(function.__doc__)
-        metadata = {
-            "name": function.__name__,
-            "description": doc.short_description,
-            "parameters": {"type": "object", "properties": {}},
-            "required": [],
-        }
+    def _trim_messages(self):
+        # I'm not sure how accurate this is, but I encode each message to json and then count
+        # the tokens in the result.
 
-        for param in doc.params:
-            param_type = param.type_name
-            param_name = param.arg_name
-            description = param.description
-            metadata["parameters"]["properties"][param_name] = {
-                "type": param_type,
-                "description": description,
-            }
-
-        # determined which parameters are required by looking at the function signature
-        sig = inspect.signature(function)
-        for param_name, param in sig.parameters.items():
-            if param.default == inspect.Parameter.empty:
-                metadata["required"].append(param_name)
-
-        return metadata
+        token_count = sum(len(self.encoding.encode(m.to_json())) for m in self.messages)
+        while token_count > self.max_tokens:
+            removed_message = self.messages.pop(0)
+            token_count -= len(self.encoding.encode(removed_message.to_json()))

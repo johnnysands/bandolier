@@ -183,3 +183,26 @@ def test_add_function_too_few_annotated_arguments():
     # Test adding a function with too few annotated arguments
     with pytest.raises(ValueError):
         bandolier.add_function(function_with_two_args)
+
+
+def test_message_trimming():
+    bandolier = Bandolier(max_tokens=20)
+
+    # Add a message that is within the token limit
+    bandolier.add_user_message("Here is the first message.")
+    assert len(bandolier.messages) == 1
+
+    # Add a message that exceeds the token limit
+    bandolier.add_user_message("Here is the second message.")
+    assert len(bandolier.messages) == 1
+    assert bandolier.messages[0].content == "Here is the second message."
+
+
+def test_message_trimming_with_multiple_messages():
+    bandolier = Bandolier(max_tokens=50)
+
+    # Add multiple messages
+    for i in range(6):
+        bandolier.add_user_message("Hello")
+
+    assert len(bandolier.messages) == 4  # determined empirically

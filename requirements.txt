@@ -1,3 +1,4 @@
 openai
 docstring_parser
 python-box
+tiktoken
