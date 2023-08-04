@@ -14,46 +14,31 @@ def get_weather(location):
     return {"temperature": 72, "conditions": ["sunny", "windy"]}
 
 
-# main
-messages = [
-    {
-        "role": "system",
-        "content": "You are a helpful assistant.",
-    },
-]
-
-bandolier = Bandolier()
-bandolier.add(get_weather)
-
-# TODO:
-# add a routine to work from bandolier to openai
-# so i can do:
-# for message in bandolier.loop():
+def get_location():
+    """
+    Get the user's current location.
+    """
+    return "San Francisco, CA"
 
 
-# get user message
-while True:
-    text = input("You: ")
-    messages.append({"role": "user", "content": text})
+def main():
+    bandolier = Bandolier()
+    bandolier.add_function(get_weather)
+    bandolier.add_function(get_location)
 
-    # generate completion
-    response = completion(messages, bandolier.config())
-    message = response.message
-    messages.append(message)
+    bandolier.add_message(
+        {
+            "role": "system",
+            "content": "You are a helpful assistant.",
+        }
+    )
 
-    while response.finish_reason == "function_call":
-        print("function: ", message.function_call.name, message.function_call.arguments)
-        message = bandolier.call(
-            message.function_call.name, message.function_call.arguments
-        )
-        messages.append(message)
-        print("response: ", message["name"], message["content"])
+    while True:
+        user_input = input("You: ")
+        bandolier.add_message({"role": "user", "content": user_input})
+        message = bandolier.run()
+        print("System: ", message["content"])
 
-        response = completion(messages, bandolier.config())
-        message = response.message
-        messages.append(message)
 
-    if response.finish_reason != "stop":
-        raise Exception(f"Unexpected finish reason: {response.finish_reason}")
-
-    print("System: ", message.content)
+if __name__ == "__main__":
+    main()

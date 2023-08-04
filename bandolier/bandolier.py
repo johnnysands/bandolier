@@ -6,15 +6,32 @@ import openai
 import json
 
 
+# openai routines
+def completion(messages, functions=None):
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=messages,
+        functions=functions,
+        temperature=0.0,
+    )
+
+    return response["choices"][0]
+
+
 class Bandolier:
-    def __init__(self):
+    def __init__(self, completion_fn=completion):
         self.functions = {}
         self.function_metadata = []
+        self.messages = []
+        self.completion_fn = completion_fn
 
-    def add(self, function):
+    def add_function(self, function):
         metadata = self._gather_function_metadata(function)
         self.functions[metadata["name"]] = function
         self.function_metadata.append(metadata)
+
+    def add_message(self, message):
+        self.messages.append(message)
 
     def call(self, function_name, arguments):
         arguments = json.loads(arguments)
@@ -29,8 +46,24 @@ class Bandolier:
         return self.function_metadata
 
     def run(self):
-        # TODO implement this
-        raise NotImplementedError
+        response = self.completion_fn(self.messages, self.config())
+        message = response.message
+        self.add_message(message)
+
+        while response.finish_reason == "function_call":
+            message = self.call(
+                message.function_call.name, message.function_call.arguments
+            )
+            self.add_message(message)
+
+            response = self.completion_fn(self.messages, self.config())
+            message = response.message
+            self.add_message(message)
+
+        if response.finish_reason != "stop":
+            raise Exception(f"Unexpected finish reason: {response.finish_reason}")
+
+        return message
 
     def _gather_function_metadata(self, function):
         doc = parse(function.__doc__)
@@ -57,16 +90,3 @@ class Bandolier:
                 metadata["required"].append(param_name)
 
         return metadata
-
-
-# openai routines
-def completion(messages, functions=None):
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=messages,
-        functions=functions,
-        function_call="auto",
-        temperature=0.0,
-    )
-
-    return response["choices"][0]
