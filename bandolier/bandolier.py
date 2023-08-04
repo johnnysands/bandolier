@@ -1,5 +1,6 @@
 """Experiment with using OpenAI chat functions."""
 
+from box import Box
 from docstring_parser import parse
 import inspect
 import openai
@@ -62,7 +63,7 @@ class Bandolier:
         self.function_metadata.append(metadata)
 
     def add_message(self, message):
-        self.messages.append(message)
+        self.messages.append(Box(message))
 
     def call(self, function_name, arguments):
         arguments = json.loads(arguments)
