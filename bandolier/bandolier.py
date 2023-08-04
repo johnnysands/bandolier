@@ -9,12 +9,15 @@ import tiktoken
 
 # openai helper
 def completion(messages, functions=None):
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=messages,
-        functions=functions,
-        temperature=0.0,
-    )
+    request = {
+        "model": "gpt-3.5-turbo",
+        "messages": messages,
+        "temperature": 0.0,
+    }
+    if functions:
+        request["functions"] = functions
+
+    response = openai.ChatCompletion.create(**request)
 
     return response["choices"][0]
 

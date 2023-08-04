@@ -10,9 +10,12 @@ with open("README.md") as f:
 with open("requirements.txt", "r") as f:
     requirements = f.read().splitlines()
 
+with open("requirements-dev.txt", "r") as f:
+    requirements_dev = f.read().splitlines()
+
 setup(
     name="bandolier",
-    version="0.0.4",
+    version="0.0.5",
     description="A helper for OpenAI functions",
     long_description=readme,
     long_description_content_type="text/markdown",
@@ -22,6 +25,7 @@ setup(
     license="MIT",
     packages=["bandolier"],
     install_requires=requirements,
+    extras_require={"dev": requirements_dev},
     readme="README.md",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
