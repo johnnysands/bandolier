@@ -78,6 +78,10 @@ class Bandolier:
         "convience method for adding a system message"
         self.add_message({"role": "system", "content": content})
 
+    def add_user_message(self, content):
+        "convience method for adding a user message"
+        self.add_message({"role": "user", "content": content})
+
     def call(self, function_name, arguments):
         arguments = json.loads(arguments)
         function = self.functions[function_name]

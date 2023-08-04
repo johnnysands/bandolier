@@ -34,9 +34,9 @@ def main():
 
     while True:
         user_input = input("You: ")
-        bandolier.add_message({"role": "user", "content": user_input})
+        bandolier.add_user_message(user_input)
         message = bandolier.run()
-        print("System: ", message["content"])
+        print(message.role, message.content)
 
 
 if __name__ == "__main__":
