@@ -8,9 +8,9 @@ import tiktoken
 
 
 # openai helper
-def completion(messages, functions=None):
+def completion(model, messages, functions=None):
     request = {
-        "model": "gpt-3.5-turbo",
+        "model": model,
         "messages": messages,
         "temperature": 0.0,
     }
@@ -46,6 +46,7 @@ class Bandolier:
         self.function_metadata = []
         self.messages = []
         self.completion_fn = completion_fn
+        self.model = model
         self.max_tokens = max_tokens
         self.encoding = tiktoken.encoding_for_model(model)
 
@@ -105,7 +106,9 @@ class Bandolier:
         return self.function_metadata
 
     def run(self):
-        response = self.completion_fn(self.messages, self.get_function_metadata())
+        response = self.completion_fn(
+            self.model, self.messages, self.get_function_metadata()
+        )
         message = response.message
         self.add_message(message)
 
@@ -120,7 +123,9 @@ class Bandolier:
             self.add_message(message)
             messages.append(message)
 
-            response = self.completion_fn(self.messages, self.get_function_metadata())
+            response = self.completion_fn(
+                self.model, self.messages, self.get_function_metadata()
+            )
             message = response.message
             self.add_message(message)
             messages.append(message)

@@ -9,7 +9,7 @@ with open("README.md") as f:
 
 setup(
     name="bandolier",
-    version="0.1.1",
+    version="0.1.2",
     description="A helper for OpenAI functions",
     long_description=readme,
     long_description_content_type="text/markdown",

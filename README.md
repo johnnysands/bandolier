@@ -76,13 +76,17 @@ if __name__ == "__main__":
     main()
 ```
 
-If you want more control, there are two other ways to use the Library.
-
-You can specify the function that will be used to send requests to OpenAI:
+If you want more control, there are two other ways to use the Library. You can specify
+a different model version:
 
 ```python
-model = "gpt-3.5-turbo"
-def completion(messages, functions=None):
+bandolier = Bandolier(model="gpt-4")
+```
+Or you can specify your own completion function.
+
+
+```python
+def completion(model, messages, functions=None):
     response = openai.ChatCompletion.create(
         model=model,
         messages=messages,
@@ -94,7 +98,7 @@ def completion(messages, functions=None):
 
 # the model should be specified to bandolier as well so it can do
 # the correct token accounting when maintaining history.
-bandolier = Bandolier(completion_fn=completion, model=model)
+bandolier = Bandolier(completion_fn=completion)
 
 ```
 

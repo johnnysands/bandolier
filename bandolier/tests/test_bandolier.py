@@ -61,7 +61,7 @@ def dict_to_simplenamespace(d):
 
 # Test cases
 def test_run():
-    def mock_completion_fn(messages, config):
+    def mock_completion_fn(model, messages, config):
         if messages[-1]["role"] == "user":
             response = {
                 "message": {
@@ -111,7 +111,7 @@ def test_run():
 
 
 def test_run_only_message():
-    def mock_completion_fn_only_message(messages, config):
+    def mock_completion_fn_only_message(model, messages, config):
         response = {
             "message": {
                 "role": "assistant",
