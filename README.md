@@ -58,7 +58,17 @@ def main():
     while True:
         user_input = input("You: ")
         bandolier.add_user_message(user_input)
-        message = bandolier.run()
+        messages = bandolier.run()
+        for messages in messages:
+            if message.role == "function":
+                continue
+            # message can have either or both of content and function_call
+            if message.content:
+                print(f"{message.role}: {message.content}")
+            if "function_call" in message:
+                print(f"{message.role}: {message.function_call.name}")
+
+
         print(f"{message.role}: {message.content}")
 
 
