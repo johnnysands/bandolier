@@ -35,8 +35,17 @@ def main():
     while True:
         user_input = input("You: ")
         bandolier.add_user_message(user_input)
-        message = bandolier.run()
-        print(f"{message.role}: {message.content}")
+        messages = bandolier.run()
+        for message in messages:
+            if message.role == "function":
+                continue
+            elif message.role == "assistant":
+                if message.content:
+                    print(f"{message.role}: {message.content}")
+                if "function_call" in message:
+                    print(f"{message.role}: {message.function_call.name}")
+            else:
+                raise ValueError(f"Unknown role: {message.role}")
 
 
 if __name__ == "__main__":

@@ -93,40 +93,41 @@ class Bandolier:
     def call(self, function_name, arguments):
         arguments = json.loads(arguments)
         function = self.functions[function_name]
-        return {
-            "role": "function",
-            "name": function_name,
-            "content": json.dumps(function(**arguments)),
-        }
+        return Box(
+            {
+                "role": "function",
+                "name": function_name,
+                "content": json.dumps(function(**arguments)),
+            }
+        )
 
     def get_function_metadata(self):
         return self.function_metadata
 
-    def run(self, debug=False):
+    def run(self):
         response = self.completion_fn(self.messages, self.get_function_metadata())
         message = response.message
         self.add_message(message)
 
+        # TODO FIXME this code makes the assumption that function call will not have message content,
+        # but that's not actually true.  It's possible to return a mesage with both content and a function call.
+        # This needs to be refactored so that run can return multiple messages.
+        messages = [message]
         while response.finish_reason == "function_call":
-            if debug:
-                print("function_call")
-                print(json.dumps(response, indent=2))
             message = self.call(
                 message.function_call.name, message.function_call.arguments
             )
-            if debug:
-                print("function call response")
-                print(json.dumps(message, indent=2))
             self.add_message(message)
+            messages.append(message)
 
             response = self.completion_fn(self.messages, self.get_function_metadata())
             message = response.message
             self.add_message(message)
+            messages.append(message)
 
         if response.finish_reason != "stop":
             raise Exception(f"Unexpected finish reason: {response.finish_reason}")
-
-        return message
+        return messages
 
     def _trim_messages(self):
         # I'm not sure how accurate this is, but I encode each message to json and then count

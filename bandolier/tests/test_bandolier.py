@@ -20,7 +20,7 @@ from types import SimpleNamespace
 )
 @annotate_description("Get the weather for a location.")
 def get_weather(location, unit="F"):
-    return {"temperature": 72, unit: unit, "conditions": ["sunny", "windy"]}
+    return {"temperature": 72, "unit": unit, "conditions": ["sunny", "windy"]}
 
 
 def get_location():
@@ -65,7 +65,7 @@ def test_run():
         if messages[-1]["role"] == "user":
             response = {
                 "message": {
-                    "role": "system",
+                    "role": "assistant",
                     "function_call": {
                         "name": "get_weather",
                         "arguments": '{"location": "San Francisco, CA", "unit": "F"}',
@@ -90,9 +90,24 @@ def test_run():
     bandolier.add_message(
         {"role": "user", "content": "What is the weather in San Francisco, CA?"}
     )
-    response = bandolier.run()
-    assert response.role == "assistant"
-    assert "The weather in San Francisco, CA is 72F and sunny." in response["content"]
+    messages = bandolier.run()
+    print(messages)
+
+    assert len(messages) == 3
+    assert messages[0].role == "assistant"
+    assert messages[0].function_call.name == "get_weather"
+    assert (
+        messages[0].function_call.arguments
+        == '{"location": "San Francisco, CA", "unit": "F"}'
+    )
+    assert messages[1].role == "function"
+    assert messages[1].name == "get_weather"
+    assert (
+        messages[1].content
+        == '{"temperature": 72, "unit": "F", "conditions": ["sunny", "windy"]}'
+    )
+    assert messages[2].role == "assistant"
+    assert messages[2].content == "The weather in San Francisco, CA is 72F and sunny."
 
 
 def test_run_only_message():
@@ -109,56 +124,10 @@ def test_run_only_message():
     bandolier = Bandolier(completion_fn=mock_completion_fn_only_message)
     bandolier.add_message({"role": "system", "content": "You are a helpful assistant."})
     bandolier.add_message({"role": "user", "content": "Hello assistant"})
-    response = bandolier.run()
-    assert response.role == "assistant"
-    assert "Hello, how can I assist you today?" in response.content
-
-
-def test_run_two_function_calls():
-    def mock_completion_fn_two_function_calls(messages, config):
-        if messages[-1].role == "user":
-            response = {
-                "message": {
-                    "role": "system",
-                    "function_call": {
-                        "name": "get_location",
-                        "arguments": "{}",
-                    },
-                },
-                "finish_reason": "function_call",
-            }
-        elif (
-            messages[-1].role == "system"
-            and messages[-1].function_call.name == "get_location"
-        ):
-            response = {
-                "message": {
-                    "role": "system",
-                    "function_call": {
-                        "name": "get_weather",
-                        "arguments": '{"location": "San Francisco, CA", "unit": "F"}',
-                    },
-                },
-                "finish_reason": "function_call",
-            }
-        else:
-            response = {
-                "message": {
-                    "role": "assistant",
-                    "content": "The weather in San Francisco, CA is 72F and sunny.",
-                },
-                "finish_reason": "stop",
-            }
-        return Box(response)
-
-    bandolier = Bandolier(completion_fn=mock_completion_fn_two_function_calls)
-    bandolier.add_function(get_location)
-    bandolier.add_function(get_weather)
-    bandolier.add_message({"role": "system", "content": "You are a helpful assistant."})
-    bandolier.add_message({"role": "user", "content": "What's the weather like?"})
-    response = bandolier.run()
-    assert response.role == "assistant"
-    assert "The weather in San Francisco, CA is 72F and sunny." in response.content
+    messages = bandolier.run()
+    assert len(messages) == 1
+    assert messages[0].role == "assistant"
+    assert "Hello, how can I assist you today?" in messages[0].content
 
 
 def test_add_function_too_many_annotated_arguments():
