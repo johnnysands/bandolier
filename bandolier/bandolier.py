@@ -102,15 +102,21 @@ class Bandolier:
     def get_function_metadata(self):
         return self.function_metadata
 
-    def run(self):
+    def run(self, debug=False):
         response = self.completion_fn(self.messages, self.get_function_metadata())
         message = response.message
         self.add_message(message)
 
         while response.finish_reason == "function_call":
+            if debug:
+                print("function_call")
+                print(json.dumps(response, indent=2))
             message = self.call(
                 message.function_call.name, message.function_call.arguments
             )
+            if debug:
+                print("function call response")
+                print(json.dumps(message, indent=2))
             self.add_message(message)
 
             response = self.completion_fn(self.messages, self.get_function_metadata())
