@@ -1,5 +1,5 @@
 """Experiment with using OpenAI chat functions."""
-from bandolier import Bandolier, annotate_arguments, annotate_description
+from bandolier import Bandolier, Conversation, annotate_arguments, annotate_description
 
 
 @annotate_arguments(
@@ -30,12 +30,16 @@ def main():
     bandolier = Bandolier()
     bandolier.add_function(get_weather)
     bandolier.add_function(get_location)
-    bandolier.add_system_message("You are a helpful assistant.")
+
+    conversation = Conversation()
+    conversation.add_system_message("Hello, I am a helpful assistant.")
+
+    print("Try asking about the weather.\n\n")
 
     while True:
         user_input = input("You: ")
-        bandolier.add_user_message(user_input)
-        messages = bandolier.run()
+        conversation.add_user_message(user_input)
+        messages = bandolier.run(conversation)
         for message in messages:
             if message.role == "function":
                 continue

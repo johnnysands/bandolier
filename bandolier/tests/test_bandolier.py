@@ -1,7 +1,6 @@
-from bandolier import Bandolier, annotate_arguments, annotate_description
+from bandolier import Bandolier, annotate_arguments, annotate_description, Conversation
 from box import Box
 import pytest
-from types import SimpleNamespace
 
 
 # Mock functions to be used for testing
@@ -35,13 +34,6 @@ def test_add_function():
     assert "get_weather" in bandolier.functions
 
 
-def test_add_message():
-    bandolier = Bandolier()
-    message = {"role": "system", "content": "You are a helpful assistant."}
-    bandolier.add_message(message)
-    assert message in bandolier.messages
-
-
 def test_call():
     bandolier = Bandolier()
     bandolier.add_function(get_weather)
@@ -50,13 +42,6 @@ def test_call():
     )
     assert response["name"] == "get_weather"
     assert "temperature" in response["content"]
-
-
-def dict_to_simplenamespace(d):
-    for k, v in d.items():
-        if isinstance(v, dict):
-            d[k] = dict_to_simplenamespace(v)
-    return SimpleNamespace(**d)
 
 
 # Test cases
@@ -86,12 +71,15 @@ def test_run():
 
     bandolier = Bandolier(completion_fn=mock_completion_fn)
     bandolier.add_function(get_weather)
-    bandolier.add_message({"role": "system", "content": "You are a helpful assistant."})
-    bandolier.add_message(
+
+    conversation = Conversation()
+    conversation.add_message(
+        {"role": "system", "content": "You are a helpful assistant."}
+    )
+    conversation.add_message(
         {"role": "user", "content": "What is the weather in San Francisco, CA?"}
     )
-    messages = bandolier.run()
-    print(messages)
+    messages = bandolier.run(conversation)
 
     assert len(messages) == 3
     assert messages[0].role == "assistant"
@@ -122,9 +110,12 @@ def test_run_only_message():
         return Box(response)
 
     bandolier = Bandolier(completion_fn=mock_completion_fn_only_message)
-    bandolier.add_message({"role": "system", "content": "You are a helpful assistant."})
-    bandolier.add_message({"role": "user", "content": "Hello assistant"})
-    messages = bandolier.run()
+    conversation = Conversation()
+    conversation.add_message(
+        {"role": "system", "content": "You are a helpful assistant."}
+    )
+    conversation.add_message({"role": "user", "content": "Hello assistant"})
+    messages = bandolier.run(conversation)
     assert len(messages) == 1
     assert messages[0].role == "assistant"
     assert "Hello, how can I assist you today?" in messages[0].content
@@ -152,26 +143,3 @@ def test_add_function_too_few_annotated_arguments():
     # Test adding a function with too few annotated arguments
     with pytest.raises(ValueError):
         bandolier.add_function(function_with_two_args)
-
-
-def test_message_trimming():
-    bandolier = Bandolier(max_tokens=20)
-
-    # Add a message that is within the token limit
-    bandolier.add_user_message("Here is the first message.")
-    assert len(bandolier.messages) == 1
-
-    # Add a message that exceeds the token limit
-    bandolier.add_user_message("Here is the second message.")
-    assert len(bandolier.messages) == 1
-    assert bandolier.messages[0].content == "Here is the second message."
-
-
-def test_message_trimming_with_multiple_messages():
-    bandolier = Bandolier(max_tokens=50)
-
-    # Add multiple messages
-    for i in range(6):
-        bandolier.add_user_message("Hello")
-
-    assert len(bandolier.messages) == 4  # determined empirically

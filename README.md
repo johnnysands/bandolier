@@ -2,29 +2,23 @@
 
 Bandolier is a library to make it easier to deal with OpenAI ChatGPT functions.
 
-To expose functions to OpenAI GPT services, we need to tell OpenAI about the
-functions.  Ideally we could simply inspect the functions and use that information
-to communicate to OpenAI, but unfortunately all the information we need isn't
-available.
+There are two key classes:
 
-Type annotations could get us part of the way there, but they don't solve the
-whole problem, and they can't represent some of more complex data structures
-it's possible to use with ChatGPT.
+Bandolier tracks the information on your functions and helps you build the
+prompts you need to expose the functions to the chat interface.
 
-Bandolier uses decorators to add annotations to functions with the missing
-information.  These annotations are also validated against the information
-that we can get via introspection, helping your code and configuration
-stay in sync.
-
-Bandolier also provides some convenience functions for working with OpenAI's APIs.
-It helps you manage message history and process requests for function calls automatically.
+Conversation stores your message history.  Bandolier uses the Conversation to
+build prompts with appropriate history. You can use a different Conversation
+in each call to Bandolier to make it easier to manage multiple conversation
+streams.
 
 ## Example
 
 ```python
-from bandolier import Bandolier, annotate_arguments, annotate_description
+from bandolier import Bandolier, Conversation, annotate_arguments, annotate_description
 
 
+# First set up your functions
 @annotate_arguments(
     {
         "location": {
@@ -40,36 +34,44 @@ from bandolier import Bandolier, annotate_arguments, annotate_description
 )
 @annotate_description("Get the weather for a location.")
 def get_weather(location, unit="F"):
+    # api call here...
     return {"temperature": 72, unit: unit, "conditions": ["sunny", "windy"]}
 
 
 # can also use docstring for description
 def get_location():
     """Get the user's location."""
+    # api call here...
     return "San Francisco, CA"
 
 
 def main():
+    # Set up the bandolier function configuration
     bandolier = Bandolier()
     bandolier.add_function(get_weather)
     bandolier.add_function(get_location)
-    bandolier.add_system_message("You are a helpful assistant.")
+
+    # create a new conversational conversation
+    conversation = Conversation()
+    conversation.add_system_message("You are a helpful assistant.")
 
     while True:
         user_input = input("You: ")
-        bandolier.add_user_message(user_input)
-        messages = bandolier.run()
-        for messages in messages:
+        conversation.add_user_message(user_input)
+
+        # the messages returned here are for UI purposes.  The conversation has already been
+        # updated with new messages.
+        messages = bandolier.run(conversation)
+        for message in messages:
+            # this message indicates function output, and you probably don't need to do anything with it.
             if message.role == "function":
                 continue
-            # message can have either or both of content and function_call
+
+            # messages from the server can have content and/or function_call both
             if message.content:
                 print(f"{message.role}: {message.content}")
             if "function_call" in message:
                 print(f"{message.role}: {message.function_call.name}")
-
-
-        print(f"{message.role}: {message.content}")
 
 
 if __name__ == "__main__":

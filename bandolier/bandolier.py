@@ -7,7 +7,6 @@ import json
 import tiktoken
 
 
-# openai helper
 def completion(model, messages, functions=None):
     request = {
         "model": model,
@@ -18,24 +17,7 @@ def completion(model, messages, functions=None):
         request["functions"] = functions
 
     response = openai.ChatCompletion.create(**request)
-
     return response["choices"][0]
-
-
-def annotate_description(description):
-    def decorator(function):
-        function.__doc__ = description
-        return function
-
-    return decorator
-
-
-def annotate_arguments(properties):
-    def decorator(function):
-        function.__properties__ = properties
-        return function
-
-    return decorator
 
 
 class Bandolier:
@@ -44,7 +26,6 @@ class Bandolier:
     ):
         self.functions = {}
         self.function_metadata = []
-        self.messages = []
         self.completion_fn = completion_fn
         self.model = model
         self.max_tokens = max_tokens
@@ -79,18 +60,6 @@ class Bandolier:
         self.functions[name] = function
         self.function_metadata.append(metadata)
 
-    def add_message(self, message):
-        self.messages.append(Box(message))
-        self._trim_messages()
-
-    def add_system_message(self, content):
-        "convience method for adding a system message"
-        self.add_message({"role": "system", "content": content})
-
-    def add_user_message(self, content):
-        "convience method for adding a user message"
-        self.add_message({"role": "user", "content": content})
-
     def call(self, function_name, arguments):
         arguments = json.loads(arguments)
         function = self.functions[function_name]
@@ -102,43 +71,35 @@ class Bandolier:
             }
         )
 
-    def get_function_metadata(self):
-        return self.function_metadata
+    def run(self, conversation):
+        """Run the chatbot using the supplied conversation.
+        returns a list of all new messages."""
 
-    def run(self):
         response = self.completion_fn(
-            self.model, self.messages, self.get_function_metadata()
+            self.model, conversation.messages, self.function_metadata
         )
-        message = response.message
-        self.add_message(message)
+        conversation.add_message(response.message)
 
-        # TODO FIXME this code makes the assumption that function call will not have message content,
-        # but that's not actually true.  It's possible to return a mesage with both content and a function call.
-        # This needs to be refactored so that run can return multiple messages.
-        messages = [message]
+        # maintain conversation at a usable size.
+        conversation.trim_messages(self.encoding, self.max_tokens)
+
+        messages = [response.message]
         while response.finish_reason == "function_call":
-            message = self.call(
-                message.function_call.name, message.function_call.arguments
+            # call function and store message
+            fn_message = self.call(
+                response.message.function_call.name,
+                response.message.function_call.arguments,
             )
-            self.add_message(message)
-            messages.append(message)
+            conversation.add_message(fn_message)
+            messages.append(fn_message)
 
+            # return response from function
             response = self.completion_fn(
-                self.model, self.messages, self.get_function_metadata()
+                self.model, conversation.messages, self.function_metadata
             )
-            message = response.message
-            self.add_message(message)
-            messages.append(message)
+            conversation.add_message(response.message)
+            messages.append(response.message)
 
         if response.finish_reason != "stop":
             raise Exception(f"Unexpected finish reason: {response.finish_reason}")
         return messages
-
-    def _trim_messages(self):
-        # I'm not sure how accurate this is, but I encode each message to json and then count
-        # the tokens in the result.
-
-        token_count = sum(len(self.encoding.encode(m.to_json())) for m in self.messages)
-        while token_count > self.max_tokens:
-            removed_message = self.messages.pop(0)
-            token_count -= len(self.encoding.encode(removed_message.to_json()))
