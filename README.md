@@ -89,17 +89,18 @@ Or you can specify your own completion function.
 
 ```python
 def completion(model, messages, functions=None):
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=messages,
-        functions=functions,
-        temperature=0.0,
-    )
+    request = {
+        "model": model,
+        "messages": messages,
+        "temperature": 0.0,
+    }
+    if functions:
+        request["functions"] = functions
 
+    response = openai.ChatCompletion.create(**request)
     return response["choices"][0]
 
-# the model should be specified to bandolier as well so it can do
-# the correct token accounting when maintaining history.
+
 bandolier = Bandolier(completion_fn=completion)
 
 ```
